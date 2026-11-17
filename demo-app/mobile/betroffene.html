@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wie geht es Ihnen?</title>
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .smiley-big { font-size:38px; width:72px; height:72px; border-radius:999px; border:2px solid #E5E7EB; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .smiley-big.selected { border-color:var(--brand); background:var(--brand-light); transform:scale(1.06); }
+  .yesno-btn { height:64px; border-radius:14px; border:2px solid #E5E7EB; background:#fff; font-size:18px; font-weight:700; cursor:pointer; color:#374151; }
+  .yesno-btn.selected.yes { border-color:#2F7A4E; background:var(--green-bg); color:#2F7A4E; }
+  .yesno-btn.selected.no { border-color:#B23A2E; background:var(--red-bg); color:#B23A2E; }
+</style>
+</head>
+<body>
+<div class="phone-wrap">
+  <div class="phone">
+    <div id="form-view">
+      <div class="phone-header" style="text-align:center;">
+        <div style="font-size:12.5px; font-weight:700; color:#6B7280;">Guten Tag, Frau Albrecht</div>
+        <div style="font-size:20px; font-weight:700; margin-top:6px;">Wie geht es Ihnen heute?</div>
+      </div>
+      <div class="phone-body" style="display:flex; flex-direction:column; gap:28px; align-items:center; padding-top:28px;">
+        <div style="width:100%;">
+          <div style="font-size:15px; font-weight:600; text-align:center; margin-bottom:18px;">Wie hat Ihnen das Essen heute geschmeckt?</div>
+          <div style="display:flex; justify-content:space-between; padding:0 6px;" id="mood-row"></div>
+        </div>
+
+        <div style="width:100%;">
+          <div style="font-size:15px; font-weight:600; text-align:center; margin-bottom:14px;">Haben Sie heute genug getrunken?</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;" id="drink-row"></div>
+        </div>
+      </div>
+      <div class="phone-foot">
+        <button class="btn btn-primary" id="submit-btn" style="width:100%; height:58px; font-size:17px; border-radius:14px;" disabled>Absenden</button>
+      </div>
+    </div>
+
+    <div id="done-view" style="display:none; flex-grow:1; flex-direction:column; align-items:center; justify-content:center; padding:40px; gap:20px; text-align:center;">
+      <div style="width:96px; height:96px; border-radius:999px; background:var(--green-bg); display:flex; align-items:center; justify-content:center; font-size:46px;">✓</div>
+      <div style="font-size:21px; font-weight:700;">Danke schön!</div>
+      <div style="font-size:15px; color:#6B7280; line-height:1.6;">Ihre Angaben wurden gespeichert.</div>
+      <a href="../index.html" style="font-size:14px; font-weight:600;">Zurück</a>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+  const MOODS = [
+    { k: "sehrgut", e: "😄" },
+    { k: "gut", e: "🙂" },
+    { k: "mittel", e: "😐" },
+    { k: "schlecht", e: "🙁" },
+    { k: "sehrschlecht", e: "😞" },
+  ];
+  let mood = null, drink = null;
+
+  function sync() {
+    qs("#mood-row").innerHTML = MOODS.map(m =>
+      `<div class="smiley-big ${mood === m.k ? "selected" : ""}" data-k="${m.k}">${m.e}</div>`
+    ).join("");
+    qsa(".smiley-big").forEach(el => el.addEventListener("click", () => { mood = el.dataset.k; sync(); }));
+
+    qs("#drink-row").innerHTML = `
+      <div class="yesno-btn ${drink === "ja" ? "selected yes" : ""}" id="btn-ja">Ja</div>
+      <div class="yesno-btn ${drink === "nein" ? "selected no" : ""}" id="btn-nein">Nein</div>`;
+    qs("#btn-ja").addEventListener("click", () => { drink = "ja"; sync(); });
+    qs("#btn-nein").addEventListener("click", () => { drink = "nein"; sync(); });
+
+    qs("#submit-btn").disabled = !(mood && drink);
+  }
+
+  qs("#submit-btn").addEventListener("click", () => {
+    if (qs("#submit-btn").disabled) return;
+    qs("#form-view").style.display = "none";
+    qs("#done-view").style.display = "flex";
+  });
+  sync();
+</script>
+</body>
+</html>

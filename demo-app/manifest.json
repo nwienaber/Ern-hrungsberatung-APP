@@ -1,0 +1,17 @@
+{
+  "name": "Ernährungsbegleitung bei Mangelernährung im Alter",
+  "short_name": "Ernährungsbegleitung",
+  "description": "Anschauungs-Demo: Verbindung von Fachkraft, Pflege und Angehörigen bei Mangelernährung im Alter.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FAFAF9",
+  "theme_color": "#2E5E4E",
+  "lang": "de",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

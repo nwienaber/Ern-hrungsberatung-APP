@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tagesprotokoll</title>
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .portion { border-radius:8px; cursor:pointer; border:1px solid #D1D5DB; background:#fff; color:#4B5563; text-align:center; padding:10px 4px; font-size:12px; font-weight:600; }
+  .portion.selected { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .step-btn { border-radius:999px; cursor:pointer; border:1px solid #D1D5DB; background:#fff; display:flex; align-items:center; justify-content:center; width:40px; height:40px; font-size:18px; }
+</style>
+</head>
+<body>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="phone-header">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="font-size:13px; font-weight:700; color:#374151;">Ernährungsbegleitung</div>
+        <span class="role-tag pflege">PFLEGE</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+        <div style="width:36px; height:36px; border-radius:999px; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;">FA</div>
+        <div><div style="font-size:15px; font-weight:700;">Frieda Albrecht</div><div style="font-size:12px; color:#6B7280;">Tagesprotokoll · Heute</div></div>
+      </div>
+    </div>
+
+    <div class="phone-body" id="meals"></div>
+
+    <div class="phone-foot">
+      <button class="btn btn-primary" style="width:100%; height:50px;" onclick="demoAlert('Protokoll wurde in der Demo gespeichert und an die Fachkraft gemeldet.')">Protokoll speichern</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+  const LEVELS = ["Nichts", "Wenig", "Hälfte", "Meiste"];
+  const state = { fruehstueck: null, mittag: null, abend: null, drinkMl: 600 };
+
+  function mealCard(label, key) {
+    return `<div class="card" style="padding:14px;">
+      <div style="font-size:13.5px; font-weight:700; margin-bottom:10px;">${label}</div>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+        ${LEVELS.map(l => `<div class="portion ${state[key] === l ? "selected" : ""}" data-key="${key}" data-val="${l}">${l}</div>`).join("")}
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    qs("#meals").innerHTML =
+      mealCard("Frühstück", "fruehstueck") + mealCard("Mittagessen", "mittag") + mealCard("Abendessen", "abend") +
+      `<div class="card" style="padding:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="font-size:13.5px; font-weight:700;">Trinkmenge</div>
+          <div style="font-size:13px; font-weight:700; color:var(--brand);">${state.drinkMl} ml</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px; justify-content:center;">
+          <div class="step-btn" id="drink-down">−</div>
+          <div style="height:10px; flex-grow:1; border-radius:999px; background:#F0F0EF; overflow:hidden;"><div style="height:100%; width:${Math.min(100, Math.round(state.drinkMl / 1500 * 100))}%; background:#3555A0;"></div></div>
+          <div class="step-btn" id="drink-up">+</div>
+        </div>
+        <div style="font-size:11.5px; color:#9CA3AF; text-align:center; margin-top:8px;">Tagesziel: 1.500 ml</div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:13.5px; font-weight:700; margin-bottom:10px;">Auffälligkeit melden</div>
+        <textarea placeholder="z. B. kaum Appetit, wirkt schwach, verweigert Trinken …" style="width:100%; height:64px; border:1px solid #D1D5DB; border-radius:8px; padding:10px; font-size:13px; font-family:inherit; resize:none;"></textarea>
+        <button class="btn btn-outline" style="margin-top:10px; width:100%; height:42px; font-size:13.5px;" onclick="demoAlert('Meldung wurde in der Demo an die Diätassistentin gesendet.')">An Diätassistentin senden</button>
+      </div>`;
+
+    qsa(".portion").forEach(el => el.addEventListener("click", () => { state[el.dataset.key] = el.dataset.val; render(); }));
+    qs("#drink-up").addEventListener("click", () => { state.drinkMl = Math.min(3000, state.drinkMl + 100); render(); });
+    qs("#drink-down").addEventListener("click", () => { state.drinkMl = Math.max(0, state.drinkMl - 100); render(); });
+  }
+  render();
+</script>
+</body>
+</html>

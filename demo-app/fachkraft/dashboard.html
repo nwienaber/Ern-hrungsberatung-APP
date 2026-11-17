@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klient:innen – Übersicht</title>
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-mount" data-active="klienten"></div>
+
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Meine Klient:innen</div>
+        <div class="page-sub" id="header-sub">12 Klient:innen aus 3 Einrichtungen/Pflegediensten</div>
+      </div>
+      <button class="btn btn-primary" onclick="demoAlert('In der Demo nicht verknüpft – hier würde eine neue Klient:in angelegt.')">+ Neue Klient:in</button>
+    </div>
+
+    <div class="banner-warn" style="margin-bottom:16px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A5A11" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      <div style="flex-grow:1;">
+        <div style="font-size:13px; font-weight:700;">3 Screenings in den nächsten 7 Tagen fällig</div>
+        <div style="font-size:12px; margin-top:1px;">Anneliese Ehlert (14.08.) · Frieda Albrecht (16.08.) · Rolf Fischer (19.08.)</div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap;">
+      <div style="flex-grow:1; min-width:180px; display:flex; align-items:center; gap:8px; height:40px; border:1px solid #D1D5DB; border-radius:8px; padding:0 12px; background:#fff;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Klient:in suchen …" style="border:none; outline:none; font-size:14px; flex-grow:1; background:transparent;"/>
+      </div>
+      <select id="org-filter" style="height:40px; border:1px solid #D1D5DB; border-radius:8px; padding:0 10px; font-size:13px; background:#fff; color:#4B5563;">
+        <option value="all">Alle Organisationen</option>
+        <option value="Häusliche Pflege">Häusliche Pflege</option>
+        <option value="Pflegeheim Sonnenblick">Pflegeheim Sonnenblick</option>
+        <option value="Pflegedienst Nord">Pflegedienst Nord</option>
+      </select>
+      <div id="status-filters" style="display:flex; gap:8px;"></div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr>
+          <th>Name</th><th>Einrichtung / Betreuung</th><th>Letztes Screening</th><th>Status</th><th>Abrechnung</th><th>Nächster Termin</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  const CLIENTS = [
+    { name: "Frieda Albrecht", age: 84, initials: "FA", org: "Häusliche Pflege", lastScreening: "02.08.2026", status: "red", statusLabel: "Auffällig", nextDate: "16.08.2026", billing: "§43 SGB V (aktiv)" },
+    { name: "Karl-Heinz Bode", age: 78, initials: "KB", org: "Pflegeheim Sonnenblick", lastScreening: "28.07.2026", status: "amber", statusLabel: "Grenzwertig", nextDate: "25.08.2026", billing: "Heim-intern" },
+    { name: "Ilse Cornelius", age: 91, initials: "IC", org: "Häusliche Pflege", lastScreening: "30.07.2026", status: "green", statusLabel: "Unauffällig", nextDate: "27.09.2026", billing: "Privat" },
+    { name: "Werner Dahms", age: 83, initials: "WD", org: "Pflegedienst Nord", lastScreening: "05.08.2026", status: "green", statusLabel: "Unauffällig", nextDate: "02.10.2026", billing: "§43 SGB V (beantragt)" },
+    { name: "Anneliese Ehlert", age: 88, initials: "AE", org: "Pflegeheim Sonnenblick", lastScreening: "01.08.2026", status: "red", statusLabel: "Auffällig", nextDate: "14.08.2026", billing: "Heim-intern" },
+    { name: "Rolf Fischer", age: 79, initials: "RF", org: "Häusliche Pflege", lastScreening: "22.07.2026", status: "amber", statusLabel: "Grenzwertig", nextDate: "19.08.2026", billing: "Privat" },
+  ];
+
+  let state = { filter: "all", org: "all", q: "" };
+
+  function renderFilters() {
+    const defs = [
+      { key: "all", label: "Alle (" + CLIENTS.length + ")" },
+      { key: "flag", label: "Auffällig (" + CLIENTS.filter(c => c.status === "red").length + ")" },
+      { key: "due", label: "Grenzwertig/Fällig (" + CLIENTS.filter(c => c.status !== "green").length + ")" },
+    ];
+    qs("#status-filters").innerHTML = defs.map(d =>
+      `<div class="chip ${state.filter === d.key ? "active" : ""}" data-filter="${d.key}">${d.label}</div>`
+    ).join("");
+    qsa("#status-filters .chip").forEach(el => el.addEventListener("click", () => {
+      state.filter = el.dataset.filter; renderAll();
+    }));
+  }
+
+  function renderRows() {
+    let list = CLIENTS;
+    if (state.org !== "all") list = list.filter(c => c.org === state.org);
+    if (state.filter === "flag") list = list.filter(c => c.status === "red");
+    if (state.filter === "due") list = list.filter(c => c.status !== "green");
+    if (state.q.trim()) {
+      const q = state.q.trim().toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q));
+    }
+
+    qs("#rows").innerHTML = list.map(c => `
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:30px; height:30px; border-radius:999px; background:#F3F4F6; color:#6B7280; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;">${c.initials}</div>
+            <div><div style="font-weight:600;">${c.name}</div><div style="font-size:12px; color:#9CA3AF;">${c.age} Jahre</div></div>
+          </div>
+        </td>
+        <td style="color:#4B5563;">${c.org}</td>
+        <td style="color:#4B5563;">${c.lastScreening}</td>
+        <td><span class="badge ${c.status}"><span class="dot"></span>${c.statusLabel}</span></td>
+        <td style="color:#4B5563; font-size:12.5px;">${c.billing}</td>
+        <td style="color:#4B5563;">${c.nextDate}</td>
+        <td><a href="klient.html?name=${encodeURIComponent(c.name)}&initials=${c.initials}&age=${c.age}&org=${encodeURIComponent(c.org)}&status=${c.status}&statusLabel=${encodeURIComponent(c.statusLabel)}" style="color:#9CA3AF;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </a></td>
+      </tr>`).join("");
+
+    qs("#header-sub").textContent = state.org === "all"
+      ? "12 Klient:innen aus 3 Einrichtungen/Pflegediensten"
+      : list.length + " Klient:in(nen) bei " + state.org;
+  }
+
+  function renderAll() { renderFilters(); renderRows(); }
+
+  qs("#org-filter").addEventListener("change", (e) => { state.org = e.target.value; renderAll(); });
+  qs("#search").addEventListener("input", (e) => { state.q = e.target.value; renderRows(); });
+
+  renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screening – NRS-2002</title>
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .wizard-head { display:flex; align-items:center; justify-content:space-between; padding:20px 40px; border-bottom:1px solid var(--border); background:#fff; }
+  .progress-track { height:4px; background:var(--border); }
+  .progress-fill { height:100%; background:var(--brand); transition:width .2s; }
+  .wizard-body { display:flex; flex-direction:column; align-items:center; padding:48px 40px; max-width:720px; margin:0 auto; }
+  .wizard-foot { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-top:1px solid var(--border); background:#fff; }
+  .dots { display:flex; gap:6px; }
+  .dots span { width:7px; height:7px; border-radius:999px; background:var(--border); }
+  .dots span.active { background: var(--brand); }
+</style>
+</head>
+<body>
+<div style="display:flex; flex-direction:column; min-height:100vh;">
+  <div class="wizard-head">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <a href="klient.html" style="color:#6B7280;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+      <div>
+        <div style="font-size:16px; font-weight:700;">Screening: Frieda Albrecht</div>
+        <div style="font-size:12px; color:#6B7280;">NRS-2002 (vereinfachte Demo-Fassung, angelehnt an die ESPEN-Leitlinie)</div>
+      </div>
+    </div>
+    <div style="font-size:13px; color:#6B7280; font-weight:600;" id="step-label">Schritt 1 von 4</div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progress" style="width:25%;"></div></div>
+
+  <div class="wizard-body" id="wizard-body" style="width:100%; flex-grow:1;"></div>
+
+  <div class="wizard-foot">
+    <button class="btn btn-ghost" id="back-btn">Zurück</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn btn-primary" id="next-btn">Weiter</button>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+  const Q1 = [
+    { v: 0, t: "Normal — kein relevanter Gewichtsverlust, normale Nahrungsaufnahme" },
+    { v: 1, t: "Leicht — Gewichtsverlust > 5 % in 3 Monaten oder Nahrungsaufnahme < 75 % des Bedarfs" },
+    { v: 2, t: "Mäßig — Gewichtsverlust > 5 % in 2 Monaten, BMI 18,5–20,5, oder Nahrungsaufnahme 25–50 % des Bedarfs" },
+    { v: 3, t: "Schwer — Gewichtsverlust > 5 % in 1 Monat, BMI < 18,5, oder Nahrungsaufnahme < 25 % des Bedarfs" },
+  ];
+  const Q2 = [
+    { v: 0, t: "Keine — normaler Ernährungsbedarf" },
+    { v: 1, t: "Leicht — z. B. chronische Erkrankung mit akuter Komplikation, noch mobil" },
+    { v: 2, t: "Mäßig — z. B. schwere Erkrankung, größere OP in der Vorgeschichte, bettlägerig" },
+    { v: 3, t: "Schwer — z. B. intensivpflichtige Erkrankung" },
+  ];
+  const Q3 = [
+    { v: 1, t: "70 Jahre oder älter (+1 Punkt)" },
+    { v: 0, t: "Unter 70 Jahre (+0 Punkte)" },
+  ];
+
+  let step = 1;
+  const answers = { a1: null, a2: null, a3: null };
+
+  function canAdvance() {
+    if (step === 1) return answers.a1 !== null;
+    if (step === 2) return answers.a2 !== null;
+    if (step === 3) return answers.a3 !== null;
+    return true;
+  }
+
+  function optionList(options, key) {
+    return `<div style="display:flex; flex-direction:column; gap:10px;">` +
+      options.map(o => `<div class="option ${answers[key] === o.v ? "selected" : ""}" data-key="${key}" data-val="${o.v}">${o.t}</div>`).join("") +
+      `</div>`;
+  }
+
+  function resultInfo() {
+    const score = (answers.a1 ?? 0) + (answers.a2 ?? 0) + (answers.a3 ?? 0);
+    if (score === 0) return { score, label: "Kein Ernährungsrisiko (NRS-2002: 0)", text: "Kein akutes Risiko erkennbar. Reguläres Folgescreening gemäß Intervall (4–8 Wochen) ausreichend.", cls: "green" };
+    if (score <= 2) return { score, label: `Ernährungsrisiko möglich (NRS-2002: ${score})`, text: "Engmaschigere Beobachtung empfohlen, Wiederholung des Screenings in ca. 1 Woche.", cls: "amber" };
+    return { score, label: "Ernährungsrisiko vorhanden (NRS-2002 ≥ 3)", text: "Einbindung einer Ernährungsfachkraft und Erstellung bzw. Anpassung eines Ernährungsplans empfohlen.", cls: "red" };
+  }
+
+  function render() {
+    const body = qs("#wizard-body");
+    if (step === 1) {
+      body.innerHTML = `<div style="width:100%;">
+        <div style="font-size:19px; font-weight:700; margin-bottom:6px;">Wie stark ist der Ernährungszustand beeinträchtigt?</div>
+        <div style="font-size:13px; color:#6B7280; margin-bottom:20px;">NRS-2002-Hauptscreening, Teil 1: Gewichtsverlust, BMI und Nahrungsaufnahme der letzten Wochen einschätzen.</div>
+        ${optionList(Q1, "a1")}</div>`;
+    } else if (step === 2) {
+      body.innerHTML = `<div style="width:100%;">
+        <div style="font-size:19px; font-weight:700; margin-bottom:6px;">Wie schwer ist die Erkrankung bzw. gesundheitliche Belastung?</div>
+        <div style="font-size:13px; color:#6B7280; margin-bottom:20px;">NRS-2002-Hauptscreening, Teil 2: erhöhter Ernährungsbedarf durch akute Erkrankung/Belastung.</div>
+        ${optionList(Q2, "a2")}</div>`;
+    } else if (step === 3) {
+      body.innerHTML = `<div style="width:100%;">
+        <div style="font-size:19px; font-weight:700; margin-bottom:6px;">Alter der Klient:in</div>
+        <div style="font-size:13px; color:#6B7280; margin-bottom:20px;">Die NRS-2002 sieht einen Zuschlag von 1 Punkt für Personen ab 70 Jahren vor.</div>
+        ${optionList(Q3, "a3")}</div>`;
+    } else {
+      const r = resultInfo();
+      const fg = { red: "#B23A2E", amber: "#A9700D", green: "#2F7A4E" }[r.cls];
+      body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; width:100%;">
+        <div class="badge ${r.cls}" style="width:72px; height:72px; border-radius:999px; justify-content:center; font-size:20px; font-weight:700; padding:0;">${r.score}/7</div>
+        <div>
+          <div style="font-size:19px; font-weight:700; color:${fg};">${r.label}</div>
+          <div style="font-size:13.5px; color:#6B7280; margin-top:6px; max-width:460px;">${r.text}</div>
+        </div>
+        <div class="banner-note" style="width:100%; max-width:460px; text-align:left;">
+          Ergebnis, Datum und Antworten werden in der Verlaufsdokumentation von Frieda Albrecht gespeichert und für Pflege und Angehörige entsprechend ihrer Berechtigung sichtbar.
+        </div>
+        <div class="banner-warn" style="width:100%; max-width:460px; text-align:left;">
+          Hinweis: Diese vereinfachte Demo-Logik dient nur der Veranschaulichung des Ablaufs und ersetzt keine medizinische Diagnostik. Die Bewertung erfolgt fachlich durch die zuständige Diätassistentin/Ernährungsfachkraft.
+        </div>
+        <div style="display:flex; gap:10px; width:100%; max-width:460px;">
+          <button class="btn btn-primary" style="flex-grow:1;" onclick="location.href='plan.html'">Ernährungsplan auf Basis dieses Ergebnisses erstellen</button>
+          <button class="btn btn-ghost" onclick="demoAlert('Export würde in der echten App ein PDF erzeugen.')">Als PDF exportieren</button>
+        </div>
+      </div>`;
+    }
+
+    qsa(".option").forEach(el => el.addEventListener("click", () => {
+      answers[el.dataset.key] = Number(el.dataset.val);
+      render();
+    }));
+
+    qs("#step-label").textContent = step <= 3 ? `Schritt ${step} von 4` : "Ergebnis";
+    qs("#progress").style.width = Math.round((step / 4) * 100) + "%";
+    qs("#dots").innerHTML = [1, 2, 3, 4].map(n => `<span class="${n === step ? "active" : ""}"></span>`).join("");
+    qs("#next-btn").textContent = step === 4 ? "Fertig" : "Weiter";
+    qs("#next-btn").disabled = step < 4 && !canAdvance();
+    qs("#back-btn").style.visibility = step === 1 ? "hidden" : "visible";
+  }
+
+  qs("#next-btn").addEventListener("click", () => {
+    if (step < 4 && !canAdvance()) return;
+    if (step === 4) { location.href = "klient.html"; return; }
+    step = Math.min(4, step + 1);
+    render();
+  });
+  qs("#back-btn").addEventListener("click", () => { step = Math.max(1, step - 1); render(); });
+
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klient:in – Detail</title>
+<meta name="theme-color" content="#2E5E4E">
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-mount" data-active="klienten"></div>
+
+  <div class="main">
+    <div style="display:flex; align-items:center; gap:10px; font-size:13px; color:#6B7280; margin-bottom:14px;">
+      <a href="dashboard.html" style="color:#6B7280; display:flex; align-items:center; gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Zurück zur Übersicht
+      </a>
+    </div>
+
+    <div class="page-head" style="margin-bottom:12px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:48px; height:48px; border-radius:999px; background:#F3F4F6; color:#6B7280; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;" id="k-initials">FA</div>
+        <div>
+          <div style="font-size:20px; font-weight:700;" id="k-name">Frieda Albrecht</div>
+          <div style="font-size:13px; color:#6B7280;" id="k-meta">84 Jahre · Häusliche Pflege · Pflegedienst Nord</div>
+        </div>
+      </div>
+      <span class="badge red" id="k-status"><span class="dot"></span>Auffällig — Screening empfohlen</span>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="panels"></div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+  // Pull the clicked client's identity from the dashboard link; the rest of
+  // this page stays demo content (NRS-2002 history etc.) for every client.
+  const p = new URLSearchParams(location.search);
+  if (p.get("name")) {
+    qs("#k-name").textContent = p.get("name");
+    qs("#k-initials").textContent = p.get("initials") || "??";
+    qs("#k-meta").textContent = `${p.get("age") || "–"} Jahre · ${p.get("org") || "Häusliche Pflege"}`;
+    const status = p.get("status") || "red";
+    const label = p.get("statusLabel") || "Auffällig";
+    const kStatus = qs("#k-status");
+    kStatus.className = "badge " + status;
+    kStatus.innerHTML = `<span class="dot"></span>${label}${status === "red" ? " — Screening empfohlen" : ""}`;
+  }
+
+  const TABS = [
+    { key: "overview", label: "Übersicht" },
+    { key: "verlauf", label: "Verlauf" },
+    { key: "plan", label: "Ernährungsplan" },
+    { key: "nachrichten", label: "Nachrichten" },
+    { key: "audit", label: "Änderungsverlauf" },
+  ];
+  let activeTab = "overview";
+
+  const HISTORY = [
+    { date: "02.08.2026", weight: "58,1 kg", score: "5 / 7", label: "Risiko vorhanden", cls: "red" },
+    { date: "05.07.2026", weight: "59,8 kg", score: "3 / 7", label: "Risiko vorhanden", cls: "red" },
+    { date: "07.06.2026", weight: "60,9 kg", score: "2 / 7", label: "Risiko möglich", cls: "amber" },
+    { date: "10.05.2026", weight: "61,7 kg", score: "1 / 7", label: "Risiko möglich", cls: "amber" },
+    { date: "12.04.2026", weight: "62,3 kg", score: "0 / 7", label: "Kein Risiko", cls: "green" },
+  ];
+  const AUDIT = [
+    { when: "16.08.2026 · 09:14", who: "Sabine Meyer", action: "Ernährungsplan aktualisiert" },
+    { when: "05.08.2026 · 14:02", who: "Pflegedienst Nord", action: "Tagesprotokoll erfasst (Essen/Trinken)" },
+    { when: "02.08.2026 · 10:30", who: "Sabine Meyer", action: "Screening durchgeführt (NRS-2002), Ergebnis 5/7" },
+    { when: "20.07.2026 · 08:00", who: "System", action: "Erinnerung an Folgescreening versendet" },
+    { when: "12.06.2026 · 11:45", who: "Martina Albrecht", action: "Einwilligung zur Datenverarbeitung erteilt (als gesetzl. Betreuung)" },
+  ];
+
+  function renderTabs() {
+    qs("#tabs").innerHTML = TABS.map(t =>
+      `<button class="tab ${t.key === activeTab ? "active" : ""}" data-tab="${t.key}">${t.label}</button>`
+    ).join("");
+    qsa("#tabs .tab").forEach(el => el.addEventListener("click", () => { activeTab = el.dataset.tab; render(); }));
+  }
+
+  function render() {
+    renderTabs();
+    const panels = qs("#panels");
+    if (activeTab === "overview") {
+      panels.innerHTML = `
+        <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:20px;">
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="card">
+              <div class="card-title">Gewichtsverlauf (6 Monate)</div>
+              <svg width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none">
+                <polyline points="0,40 66,48 133,55 200,62 266,80 333,88 400,95" fill="none" stroke="#C1473B" stroke-width="2.5"/>
+                <line x1="0" y1="119" x2="400" y2="119" stroke="#E5E7EB" stroke-width="1"/>
+              </svg>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:#9CA3AF; margin-top:6px;">
+                <span>März</span><span>April</span><span>Mai</span><span>Juni</span><span>Juli</span><span>Aug</span>
+              </div>
+              <div style="font-size:12px; color:#B23A2E; margin-top:10px; font-weight:600;">− 4,2 kg seit März (− 6,8 %)</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Trinkmenge heute</div>
+              <div style="height:10px; border-radius:999px; background:#F0F0EF; overflow:hidden;"><div style="width:58%; height:100%; background:#A9700D;"></div></div>
+              <div style="font-size:12px; color:#6B7280; margin-top:8px;">870 ml von 1.500 ml Ziel</div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="card">
+              <div class="card-title">Letztes Screening (NRS-2002)</div>
+              <div style="font-size:28px; font-weight:700; color:#B23A2E;">5 / 7</div>
+              <div style="font-size:12px; color:#6B7280; margin-top:4px;">02.08.2026 · Ernährungsrisiko vorhanden (NRS-2002 ≥ 3)</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Kerndaten</div>
+              <div style="display:flex; flex-direction:column; gap:8px; font-size:13px; color:#4B5563;">
+                <div style="display:flex; justify-content:space-between;"><span>Wohnsituation</span><span style="font-weight:600; color:#1F2937;">Zuhause, mit Pflegedienst</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Diagnosen</span><span style="font-weight:600; color:#1F2937;">[Diagnosen-Platzhalter]</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Betreuende Fachkraft</span><span style="font-weight:600; color:#1F2937;">Sabine Meyer</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Abrechnung</span><span style="font-weight:600; color:#1F2937;">§43 SGB V (aktiv)</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Einwilligung</span><span style="font-weight:600; color:#2F7A4E;">Erteilt (gesetzl. Betreuung, 12.06.2026)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    } else if (activeTab === "verlauf") {
+      panels.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-ghost" onclick="demoAlert('Export würde in der echten App ein PDF/CSV erzeugen.')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+              Verlauf als PDF/CSV exportieren
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Datum</th><th>Gewicht</th><th>NRS-2002 Score</th><th>Ergebnis</th></tr></thead>
+              <tbody>
+                ${HISTORY.map(h => `<tr><td>${h.date}</td><td>${h.weight}</td><td>${h.score}</td><td><span class="badge ${h.cls}">${h.label}</span></td></tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    } else if (activeTab === "plan") {
+      panels.innerHTML = `
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="card-title">Aktueller Ernährungsplan</div>
+          <div style="font-size:13.5px; color:#4B5563; line-height:1.6;">Proteinreiche, energieangereicherte Kost in kleinen, häufigen Portionen. Angereichert mit Öl/Butter, zusätzliche Zwischenmahlzeiten. Zuletzt aktualisiert am 03.08.2026.</div>
+          <a href="plan.html">Vollständigen Plan öffnen →</a>
+        </div>`;
+    } else if (activeTab === "nachrichten") {
+      panels.innerHTML = `
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="card-title">Letzte Nachrichten</div>
+          <div style="font-size:13.5px; color:#4B5563;"><b>Pflegedienst Nord:</b> „Appetit heute deutlich schlechter, kaum Mittagessen gegessen."</div>
+          <div style="font-size:13.5px; color:#4B5563;"><b>Martina Albrecht (Tochter):</b> „Können wir diese Woche telefonieren?"</div>
+          <a href="../mobile/kommunikation.html">Alle Nachrichten öffnen →</a>
+        </div>`;
+    } else if (activeTab === "audit") {
+      panels.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12.5px; color:#6B7280;">Nachvollziehbare Historie aller Einträge und Änderungen zu diesem Fall — relevant u. a. für Qualitätsprüfungen (MDK) in Pflegeeinrichtungen.</div>
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Datum / Uhrzeit</th><th>Nutzer:in</th><th>Aktion</th></tr></thead>
+              <tbody>${AUDIT.map(a => `<tr><td style="color:#6B7280;">${a.when}</td><td style="font-weight:600;">${a.who}</td><td>${a.action}</td></tr>`).join("")}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>
